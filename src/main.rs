@@ -31,6 +31,7 @@ mod rot_n {
         /// is rotated by `n`.
         fn rotate_by(self, mut n: isize) -> Self {
             let mut dest = Self::with_capacity(self.len());
+            n %= RANGE;
             for c in self.chars() {
                 dest.push(c.rotate_by(n));
             }
