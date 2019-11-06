@@ -27,7 +27,9 @@ mod rot_n {
     }
 
     impl Rotate for String {
-        fn rotate_by(self, n: isize) -> Self {
+        /// Consumes `self` and produces a new String in which each char of self
+        /// is rotated by `n`.
+        fn rotate_by(self, mut n: isize) -> Self {
             let mut dest = Self::with_capacity(self.len());
             for c in self.chars() {
                 dest.push(c.rotate_by(n));
@@ -37,16 +39,22 @@ mod rot_n {
     }
 
     impl Rotate for char {
+        /// If this char is an alphabetic ascii char,
+        /// produces that character rotated by n through the alphabet, looping
+        /// back to a when z is passed.
         fn rotate_by(self, n: isize) -> Self {
             assert!(n.abs() < RANGE);
             if self.is_ascii_alphabetic() {
+                // select the appropriate upper and lower bounds
                 let (start, end) =
                     if self.is_ascii_uppercase() {
                         UPPERCASE_BOUNDS
                     } else {
                         LOWERCASE_BOUNDS
                     };
-                let mut adjusted = n + self as u8 as isize;
+                // add n and adjust as necessary back into
+                // the proper range of start..=end
+                let mut adjusted = n + self as isize;
                 if adjusted < start {
                     adjusted += RANGE;
                 } else if end < adjusted {
@@ -54,6 +62,7 @@ mod rot_n {
                 }
                 adjusted as u8 as char
             } else {
+                // return self unchanged if it cannot be rotated.
                 self
             }
         }
