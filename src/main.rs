@@ -19,8 +19,8 @@ fn parse_args() -> (isize, String) {
 
 mod rot_n {
     const RANGE: isize = 26;
-    const LOWERCASE_BOUNDS: (isize, isize) = ('a' as u8 as isize, 'z' as u8 as isize);
-    const UPPERCASE_BOUNDS: (isize, isize) = ('A' as u8 as isize, 'Z' as u8 as isize);
+    const LOWERCASE_BOUNDS: (isize, isize) = ('a' as isize, 'z' as isize);
+    const UPPERCASE_BOUNDS: (isize, isize) = ('A' as isize, 'Z' as isize);
 
     pub trait Rotate {
         fn rotate_by(self, n: isize) -> Self;
