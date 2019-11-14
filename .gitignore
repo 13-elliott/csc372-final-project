@@ -1,5 +1,8 @@
 /target
 **/*.rs.bk
-
+# project files
 .idea/
 *.iml
+# test data
+*.txt
+*.rot*
