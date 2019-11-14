@@ -1,10 +1,14 @@
+use std::io::{BufReader, BufRead, Write};
+use std::fs::File;
+
 const RANGE: isize = 26;
 const LOWERCASE_BOUNDS: (isize, isize) = ('a' as isize, 'z' as isize);
 const UPPERCASE_BOUNDS: (isize, isize) = ('A' as isize, 'Z' as isize);
 
 fn main() {
     let (n, fname) = parse_args();
-    // TODO: file handling
+    let outname = format!("{}.rot{}", &fname, n);
+    rotate_file(&fname, &outname, n);
 }
 
 fn parse_args() -> (isize, String) {
@@ -17,6 +21,30 @@ fn parse_args() -> (isize, String) {
         .expect("Could not parse first command line argument as a number");
     let fname = args.remove(2);
     (n, fname)
+}
+
+fn rotate_file(source_name: &str, dest_name: &str, by_n: isize) -> File {
+    let input = File::open(source_name)
+        .unwrap_or_else(|_| panic!("Could not open the given file: {}", source_name));
+    let mut output = File::create(dest_name)
+        .unwrap_or_else(|_| panic!("Could not create the output file: {}", dest_name));
+
+    let mut buffer = BufReader::new(input);
+    let mut line = String::new();
+    loop {
+        // read a line of text
+        match buffer.read_line(&mut line) {
+            Ok(0) => return output, // reached EOF
+            Err(_) => panic!("Could not read from file."),
+            Ok(_) => {
+                rot_str(&mut line, by_n);
+                match output.write_all(line.as_bytes()) {
+                    Ok(_) => line.clear(),
+                    Err(_) => panic!("Could not write to file"),
+                }
+            }
+        }
+    }
 }
 
 /// Consumes `self` and produces a new String in which each char of self
