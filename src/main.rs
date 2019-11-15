@@ -1,14 +1,15 @@
-use std::io::{BufReader, BufRead, Write};
 use std::fs::File;
+use std::io::{BufRead, BufReader, BufWriter, Write};
 
 const RANGE: isize = 26;
 const LOWERCASE_BOUNDS: (isize, isize) = ('a' as isize, 'z' as isize);
 const UPPERCASE_BOUNDS: (isize, isize) = ('A' as isize, 'Z' as isize);
 
 fn main() {
-    let (n, fname) = parse_args();
-    let outname = format!("{}.rot{}", &fname, n);
-    rotate_file(&fname, &outname, n);
+    let (n, in_name) = parse_args();
+    let out_name = format!("{}.rot{}", &in_name, n);
+    let (infile, mut outfile) = get_files(&in_name, &out_name);
+    rotate_file(&infile, &mut outfile, n);
 }
 
 fn parse_args() -> (isize, String) {
@@ -23,26 +24,34 @@ fn parse_args() -> (isize, String) {
     (n, fname)
 }
 
-fn rotate_file(source_name: &str, dest_name: &str, by_n: isize) -> File {
-    let input = File::open(source_name)
-        .unwrap_or_else(|_| panic!("Could not open the given file: {}", source_name));
-    let mut output = File::create(dest_name)
-        .unwrap_or_else(|_| panic!("Could not create the output file: {}", dest_name));
+/// TODO
+fn get_files(in_name: &str, out_name: &str) -> (File, File) {
+    (
+        // attempt to open input file
+        File::open(in_name).unwrap_or_else(|_| panic!("Could not open input file: {}", in_name)),
+        // attempt to open output file
+        File::create(out_name).unwrap_or_else(|_| panic!("Could not open input file: {}", in_name)),
+    )
+}
 
-    let mut buffer = BufReader::new(input);
+/// TODO
+fn rotate_file(input: &File, output: &mut File, by_n: isize) {
+    const READ_ERR: &str = "Error reading from input file";
+    const WRITE_ERR: &str = "Error writing to output file";
+
+    let mut in_buffer = BufReader::new(input);
+    let mut out_buffer = BufWriter::new(output);
     let mut line = String::new();
     loop {
-        // read a line of text
-        match buffer.read_line(&mut line) {
-            Ok(0) => return output, // reached EOF
-            Err(_) => panic!("Could not read from file."),
-            Ok(_) => {
-                rot_str(&mut line, by_n);
-                match output.write_all(line.as_bytes()) {
-                    Ok(_) => line.clear(),
-                    Err(_) => panic!("Could not write to file"),
-                }
-            }
+        let bytes_read = in_buffer.read_line(&mut line).expect(READ_ERR);
+        if bytes_read > 0 {
+            rot_str(&mut line, by_n);
+            out_buffer.write_all(line.as_bytes()).expect(WRITE_ERR);
+            line.clear();
+        } else {
+            // reached EOF
+            out_buffer.flush().expect(WRITE_ERR);
+            return;
         }
     }
 }
