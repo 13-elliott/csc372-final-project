@@ -16,10 +16,14 @@ fn main() {
 fn parse_args() -> (isize, String) {
     let mut args: Vec<_> = std::env::args().take(3).collect();
     if args.len() < 3 {
-        println!("Missing command line arguments! Expected at least 2, got {}", args.len() - 1);
+        println!(
+            "Missing command line arguments! Expected at least 2, got {}",
+            args.len() - 1
+        );
         std::process::exit(1);
     }
-    let n = args[1].parse()
+    let n = args[1]
+        .parse()
         .expect("Could not parse first command line argument as a number");
     let fname = args.remove(2);
     (n, fname)
@@ -75,12 +79,11 @@ fn rot_char(c: char, by_n: isize) -> char {
     assert!(by_n.abs() < RANGE);
     if c.is_ascii_alphabetic() {
         // select the appropriate upper and lower bounds
-        let (start, end) =
-            if c.is_ascii_uppercase() {
-                UPPERCASE_BOUNDS
-            } else {
-                LOWERCASE_BOUNDS
-            };
+        let (start, end) = if c.is_ascii_uppercase() {
+            UPPERCASE_BOUNDS
+        } else {
+            LOWERCASE_BOUNDS
+        };
         // add n and adjust as necessary back into
         // the proper range of start..=end
         let mut adjusted = c as isize + by_n;
