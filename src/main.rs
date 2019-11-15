@@ -12,6 +12,7 @@ fn main() {
     rotate_file(&infile, &mut outfile, n);
 }
 
+/// TODO
 fn parse_args() -> (isize, String) {
     let mut args: Vec<_> = std::env::args().take(3).collect();
     if args.len() < 3 {
@@ -56,10 +57,9 @@ fn rotate_file(input: &File, output: &mut File, by_n: isize) {
     }
 }
 
-/// Consumes `self` and produces a new String in which each char of self
-/// is rotated by `n`.
+/// TODO
 fn rot_str(s: &mut String, mut by_n: isize) {
-    let mut dest = String::with_capacity(s.len());
+    let mut dest = String::with_capacity(s.capacity());
     by_n %= RANGE;
     for c in s.chars() {
         dest.push(rot_char(c, by_n));
@@ -67,9 +67,10 @@ fn rot_str(s: &mut String, mut by_n: isize) {
     *s = dest;
 }
 
-/// If this char is an alphabetic ascii char,
-/// produces that character rotated by n through the alphabet, looping
-/// back to a when z is passed.
+/// If `c` is an alphabetic ascii char, produces
+/// that character rotated `by_n` through the alphabet,
+/// looping back to a when z is passed. If `c` is not an
+/// alphabetic ascii char, then `c` is returned unchanged.
 fn rot_char(c: char, by_n: isize) -> char {
     assert!(by_n.abs() < RANGE);
     if c.is_ascii_alphabetic() {
@@ -82,7 +83,7 @@ fn rot_char(c: char, by_n: isize) -> char {
             };
         // add n and adjust as necessary back into
         // the proper range of start..=end
-        let mut adjusted = by_n + c as isize;
+        let mut adjusted = c as isize + by_n;
         if adjusted < start {
             adjusted += RANGE;
         } else if end < adjusted {
@@ -90,7 +91,6 @@ fn rot_char(c: char, by_n: isize) -> char {
         }
         adjusted as u8 as char
     } else {
-        // return unchanged if it cannot be rotated.
         c
     }
 }
