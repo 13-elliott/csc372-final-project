@@ -1,3 +1,15 @@
+/// ## Program: rot_n.rs
+/// # Usage:
+/// `rotn n file`
+/// where `rotn` is the binary name, `n` is an integer, and `file` is a filename
+/// This program will open the given file and produce a new file which is a copy
+/// of the given file, except that each alphabetic ascii character from the input
+/// is rotated `n` spaces through the alphabet. If `n` is a negative number, then
+/// the alphabetic ascii characters will be rotated that many spaces backwards
+/// through the alphabet. We say that a letter is "rotated" because the alphabet
+/// wraps from z to a and vice versa. The case of each letter is preserved.
+/// The output file is named the same as the input file but with the suffix
+/// ".rot" followed by the given `n`
 use std::fs::File;
 use std::io::{BufRead, BufReader, BufWriter, Write};
 
@@ -6,13 +18,23 @@ const LOWERCASE_BOUNDS: (isize, isize) = ('a' as isize, 'z' as isize);
 const UPPERCASE_BOUNDS: (isize, isize) = ('A' as isize, 'Z' as isize);
 
 fn main() {
-    let (n, in_name) = parse_args();
+    let (mut n, in_name) = parse_args();
     let out_name = format!("{}.rot{}", &in_name, n);
-    let (infile, mut outfile) = get_files(&in_name, &out_name);
-    rotate_file(&infile, &mut outfile, n);
+    n %= RANGE;
+
+    let (infile, outfile) = (
+        // attempt to open input file
+        File::open(&in_name).unwrap_or_else(|_| panic!("Could not open input file: {}", in_name)),
+        // attempt to open output file
+        File::create(&out_name)
+            .unwrap_or_else(|_| panic!("Could not open output file: {}", out_name)),
+    );
+
+    rotate_file(&infile, &outfile, n);
 }
 
-/// TODO
+/// Retrieves and parses the command line arguments, returning the number to rotate by
+/// and the input filename respectively
 fn parse_args() -> (isize, String) {
     let mut args: Vec<_> = std::env::args().take(3).collect();
     if args.len() < 3 {
@@ -29,20 +51,12 @@ fn parse_args() -> (isize, String) {
     (n, fname)
 }
 
-/// TODO
-fn get_files(in_name: &str, out_name: &str) -> (File, File) {
-    (
-        // attempt to open input file
-        File::open(in_name).unwrap_or_else(|_| panic!("Could not open input file: {}", in_name)),
-        // attempt to open output file
-        File::create(out_name).unwrap_or_else(|_| panic!("Could not open input file: {}", in_name)),
-    )
-}
-
-/// TODO
-fn rotate_file(input: &File, output: &mut File, by_n: isize) {
+/// Reads from `input` and writes to `output`.
+/// `output` will be rotated `by_n` as described above.
+fn rotate_file(input: &File, output: &File, by_n: isize) {
     const READ_ERR: &str = "Error reading from input file";
     const WRITE_ERR: &str = "Error writing to output file";
+    debug_assert!(by_n.abs() < RANGE);
 
     let mut in_buffer = BufReader::new(input);
     let mut out_buffer = BufWriter::new(output);
@@ -61,13 +75,14 @@ fn rotate_file(input: &File, output: &mut File, by_n: isize) {
     }
 }
 
-/// TODO
-fn rot_str(s: &mut String, mut by_n: isize) {
-    let mut dest = String::with_capacity(s.capacity());
-    by_n %= RANGE;
+/// Rotates all of the character in the given String
+fn rot_str(s: &mut String, by_n: isize) {
+    debug_assert!(by_n.abs() < RANGE);
+    let mut dest = String::with_capacity(s.len());
     for c in s.chars() {
         dest.push(rot_char(c, by_n));
     }
+    // overwrite old str with new
     *s = dest;
 }
 
@@ -76,7 +91,7 @@ fn rot_str(s: &mut String, mut by_n: isize) {
 /// looping back to a when z is passed. If `c` is not an
 /// alphabetic ascii char, then `c` is returned unchanged.
 fn rot_char(c: char, by_n: isize) -> char {
-    assert!(by_n.abs() < RANGE);
+    debug_assert!(by_n.abs() < RANGE);
     if c.is_ascii_alphabetic() {
         // select the appropriate upper and lower bounds
         let (start, end) = if c.is_ascii_uppercase() {
