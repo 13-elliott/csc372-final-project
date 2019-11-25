@@ -1,9 +1,10 @@
 /// ## Program: rot_n.rs
+///
+/// ## Project Google doc:
+/// https://docs.google.com/document/d/1GaKXhcJAGxK3tKRVn_ZWYFrF0QlMTlOs2Nke4Wdz6u0/edit?usp=sharing
+///
 /// # Usage:
 /// `rotn n file`
-///
-/// Google doc: https://docs.google.com/document/d/1GaKXhcJAGxK3tKRVn_ZWYFrF0QlMTlOs2Nke4Wdz6u0/edit?usp=sharing
-///
 ///
 /// where `rotn` is the binary name, `n` is an integer, and `file` is a filename
 /// This program will open the given file and produce a new file which is a copy
