@@ -1,6 +1,10 @@
 /// ## Program: rot_n.rs
 /// # Usage:
 /// `rotn n file`
+///
+/// Google doc: https://docs.google.com/document/d/1GaKXhcJAGxK3tKRVn_ZWYFrF0QlMTlOs2Nke4Wdz6u0/edit?usp=sharing
+///
+///
 /// where `rotn` is the binary name, `n` is an integer, and `file` is a filename
 /// This program will open the given file and produce a new file which is a copy
 /// of the given file, except that each alphabetic ascii character from the input
@@ -36,6 +40,8 @@ fn main() {
 /// Retrieves and parses the command line arguments, returning the number to rotate by
 /// and the input filename respectively
 fn parse_args() -> (isize, String) {
+
+    //First three arugments from command line
     let mut args: Vec<_> = std::env::args().take(3).collect();
     if args.len() < 3 {
         println!(
