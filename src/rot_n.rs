@@ -26,13 +26,12 @@ fn main() {
     let out_name = format!("{}.rot{}", &in_name, n);
     n %= RANGE;
 
-    let (infile, outfile) = (
-        // attempt to open input file
-        File::open(&in_name).unwrap_or_else(|_| panic!("Could not open input file: {}", in_name)),
-        // attempt to open output file
-        File::create(&out_name)
-            .unwrap_or_else(|_| panic!("Could not open output file: {}", out_name)),
-    );
+    // attempt to open input file
+    let infile =
+        File::open(&in_name).unwrap_or_else(|_| panic!("Could not open input file: {}", in_name));
+    // attempt to open output file
+    let outfile = File::create(&out_name)
+        .unwrap_or_else(|_| panic!("Could not open output file: {}", out_name));
 
     rotate_file(&infile, &outfile, n);
 }
