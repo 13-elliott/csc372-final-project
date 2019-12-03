@@ -9,3 +9,16 @@ edition = "2018"
 [[bin]]
 name = "rotn"
 path = "src/rot_n.rs"
+
+# TODO
+#[[bin]]
+#name = "sieve"
+#path = "src/sieve.rs"
+
+[lib]
+name = "sorts"
+path = "src/sorts.rs"
+
+[dependencies]
+crossbeam-utils = "*"
+rand = "*"
