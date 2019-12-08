@@ -13,11 +13,16 @@ pub fn msort_vec<T: Ord + Send>(list: Vec<T>) -> Vec<T> {
     mergesort::sort_vec(list)
 }
 
+#[inline]
+pub fn inssort<T: Ord>(list: &mut [T]) {
+    insertionsort::sort(list)
+}
+
 mod quicksort {
     use crossbeam_utils::thread::scope as scoped_threads;
 
     /// Sorts the given mutable slice in-place using quicksort. Uses a concurrent algorithm,
-                /// thus `T` must be safe to `Send` across thread boundaries
+        /// thus `T` must be safe to `Send` across thread boundaries
     pub fn sort<T: Ord + Send>(list: &mut [T]) {
         if list.len() > 1 {
             let pivot_pos = find_pivot(list);
@@ -30,7 +35,7 @@ mod quicksort {
                 s.spawn(|_| sort(prior));
                 s.spawn(|_| sort(latter));
             })
-                .unwrap();
+            .unwrap();
         }
     }
 
@@ -62,8 +67,10 @@ mod mergesort {
 
     use crossbeam_utils::thread::scope as scoped_threads;
 
+    const MIN_SIZE: usize = 10;
+
     /// Copy the given slice into a new, owned Vec, circumventing
-                /// the Clone trait
+    /// the Clone trait
     unsafe fn slice_to_vec<T>(slc: &[T]) -> Vec<T> {
         slc.iter().map(|v| ptr::read(v)).collect()
     }
@@ -88,26 +95,31 @@ mod mergesort {
     }
 
     pub fn sort_vec<T: Ord + Send>(mut list: Vec<T>) -> Vec<T> {
-        if list.len() <= 1 {
+        if list.len() <= MIN_SIZE {
+            super::inssort(&mut list);
             return list;
         }
         let mid = list.len() / 2;
+        // split the other list off into a new Vec
         let other_list = list.drain(mid..).collect();
-        // parallelize!
+        // recurse in parallel
         let (a, b) = scoped_threads(|s| {
             const ERR_MSG: &str = "a thread panicked!";
+            // "move" keyword specifies that the closures should take
+            // ownership of external-scope variables (e.g. "list" and "other_list")
+            // rather than to borrow them
             let h1 = s.spawn(move |_| sort_vec(list));
             let h2 = s.spawn(move |_| sort_vec(other_list));
             (h1.join().expect(ERR_MSG), h2.join().expect(ERR_MSG))
         })
-            .unwrap();
+        .unwrap();
         merge(a, b)
     }
 
     /// Merges the two given sorted vectors together into one sorted vector
     pub fn merge<T: Ord>(list_a: Vec<T>, list_b: Vec<T>) -> Vec<T> {
         let mut out = Vec::with_capacity(list_a.len() + list_b.len());
-        // shadow a & b with peekable iterators
+        // convert a & b into peekable iterators
         let mut a = list_a.into_iter().peekable();
         let mut b = list_b.into_iter().peekable();
         loop {
@@ -128,8 +140,47 @@ mod mergesort {
                 } else {
                     b.next()
                 } // unwraps with certainty; None cases handled above
-                    .unwrap(),
+                .unwrap(),
             );
+        }
+    }
+}
+
+mod insertionsort {
+    use std::ptr;
+
+    pub fn sort<T: Ord>(list: &mut [T]) {
+        for unsorted_start in 1..list.len() {
+            let sorted_list = &list[..unsorted_start];
+            let ins_at = match sorted_list.binary_search(&list[unsorted_start]) {
+                Ok(i) => rightmost(sorted_list, i),
+                Err(i) => i,
+            };
+
+            shift_left(list, unsorted_start, ins_at);
+        }
+    }
+
+    /// returns the index of the rightmost occurrence of the TODO
+    fn rightmost<T: Eq>(slice: &[T], mut i: usize) -> usize {
+        while i + 1 < slice.len() && slice[i] == slice[i + 1] {
+            i += 1;
+        }
+        i
+    }
+    
+    /// TODO: check over
+    fn shift_left<T>(slice: &mut [T], from: usize, to: usize) {
+        assert!(from >= to);
+        let start = slice.as_mut_ptr();
+        unsafe {
+            let tmp = ptr::read(start.add(from));
+            for i in (to+1..=from).rev() {
+                let val = ptr::read(start.add(i-1));
+                ptr::write(start.add(i), val);
+            }
+            // reinsert tmp
+            ptr::write(start.add(to), tmp);
         }
     }
 }
@@ -193,6 +244,21 @@ mod tests {
             super::msort(&mut val);
             v2.sort();
             println!("qsort:\t{:?}\nstdlib:\t{:?}\n", &val, &v2);
+            assert_eq!(val, v2);
+        }
+    }
+    
+    
+
+    #[test]
+    pub fn inssort() {
+        for _ in 0..TIMES_PER_TEST {
+            let mut val = random_vec(30, -99, 100);
+            println!("prior:\t{:?}", &val);
+            let mut v2 = val.clone();
+            super::inssort(&mut val);
+            v2.sort();
+            println!("isort:\t{:?}\nstdlib:\t{:?}\n", &val, &v2);
             assert_eq!(val, v2);
         }
     }
