@@ -1,11 +1,13 @@
+/// Library of sorting algorithms that we've implemented
+
 #[inline]
 pub fn qsort<T: Ord + Send>(list: &mut [T]) {
-    quicksort::sort(list);
+    quicksort::sort(list)
 }
 
 #[inline]
 pub fn msort<T: Ord + Send>(list: &mut [T]) {
-    mergesort::sort(list);
+    mergesort::sort(list)
 }
 
 #[inline]
@@ -22,7 +24,7 @@ mod quicksort {
     use crossbeam_utils::thread::scope as scoped_threads;
 
     /// Sorts the given mutable slice in-place using quicksort. Uses a concurrent algorithm,
-        /// thus `T` must be safe to `Send` across thread boundaries
+    /// thus `T` must be safe to `Send` across thread boundaries
     pub fn sort<T: Ord + Send>(list: &mut [T]) {
         if list.len() > 1 {
             let pivot_pos = find_pivot(list);
@@ -35,11 +37,13 @@ mod quicksort {
                 s.spawn(|_| sort(prior));
                 s.spawn(|_| sort(latter));
             })
-            .unwrap();
+            .expect("A thread panicked in quicksort!");
         }
     }
 
-    /// Partitions the given mutable slice such that TODO
+    /// Partitions the given mutable slice such that all values less than the
+    /// given pivot are to the left of that value and all values greater than
+    /// it are to the right of that value. Returns the new index of the pivot
     fn partition<T: Ord>(list: &mut [T], pivot_ind: usize) -> usize {
         let end = list.len() - 1;
         // move pivot to the end
@@ -67,16 +71,17 @@ mod mergesort {
 
     use crossbeam_utils::thread::scope as scoped_threads;
 
-    const MIN_SIZE: usize = 10;
+    const MIN_SIZE: usize = 16;
 
-    /// Copy the given slice into a new, owned Vec, circumventing
-    /// the Clone trait
+    /// Shallowly copy the given slice into a new, owned Vec,
+    /// circumventing Clone trait
     unsafe fn slice_to_vec<T>(slc: &[T]) -> Vec<T> {
         slc.iter().map(|v| ptr::read(v)).collect()
     }
 
     /// Copy given vec back into the given slice. In order for this to be safe,
-    /// the values from `src` should be the same values in `dest` TODO ...
+    /// the values from `src` should be the same values in `dest` (i.e. those
+    /// returned by slice_to_vec
     unsafe fn vec_to_slice<T>(src: Vec<T>, dest: &mut [T]) {
         assert_eq!(src.len(), dest.len());
         let dest = dest.as_mut_ptr();
@@ -87,7 +92,8 @@ mod mergesort {
 
     /// Sorts a mutable slice using mergesort.
     /// Sneakily shallowly copies the values from `list` into an intermediary Vec
-    /// which is then sorted with the `sort_vec` function.
+    /// which is then sorted with the `sort_vec` function, and then copied back into
+    /// the slice in sorted order.
     pub fn sort<T: Ord + Send>(list: &mut [T]) {
         let mut intermediate = unsafe { slice_to_vec(list) };
         intermediate = sort_vec(intermediate);
@@ -151,6 +157,7 @@ mod mergesort {
 mod insertionsort {
     use std::ptr;
 
+    /// sorts the given slice in-place using insertion sort
     pub fn sort<T: Ord>(list: &mut [T]) {
         for unsorted_start in 1..list.len() {
             let sorted_list = &list[..unsorted_start];
@@ -159,11 +166,13 @@ mod insertionsort {
                 Err(i) => i,
             };
 
-            shift_left(list, unsorted_start, ins_at);
+            shift_right(list, unsorted_start, ins_at);
         }
     }
 
-    /// returns the index of the rightmost occurrence of the TODO
+    /// returns the index of the rightmost occurrence of the
+    /// value at the given index which is contiguous with equal values
+    /// (TODO: improve wording)
     fn rightmost<T: Eq>(slice: &[T], mut i: usize) -> usize {
         while i + 1 < slice.len() && slice[i] == slice[i + 1] {
             i += 1;
@@ -171,12 +180,16 @@ mod insertionsort {
         i
     }
 
-    /// TODO: check over
-    fn shift_left<T>(slice: &mut [T], from: usize, to: usize) {
+    /// copies the value at slice[from] to slice[to], shifting the
+    /// values between those indicies rightward as appropriate.
+    /// from must be >= to.
+    fn shift_right<T>(slice: &mut [T], from: usize, to: usize) {
         assert!(from >= to);
         let start = slice.as_mut_ptr();
         unsafe {
+            // copy the value out
             let tmp = ptr::read(start.add(from));
+            // perform the shift
             for i in (to + 1..=from).rev() {
                 let val = ptr::read(start.add(i - 1));
                 ptr::write(start.add(i), val);
@@ -188,10 +201,12 @@ mod insertionsort {
 }
 
 #[cfg(test)]
+/// unit tests
 mod tests {
     use rand::{distributions, Rng};
 
     const TIMES_PER_TEST: usize = 100;
+    const VEC_SIZE: usize = 50;
 
     fn random_vec(v_size: usize, lower: isize, upper: isize) -> Vec<isize> {
         let mut rng = rand::thread_rng();
@@ -214,7 +229,7 @@ mod tests {
     #[test]
     pub fn qsort() {
         for _ in 0..TIMES_PER_TEST {
-            let mut val = random_vec(30, -99, 100);
+            let mut val = random_vec(VEC_SIZE, -99, 100);
             println!("prior:  {:?}", &val);
             let mut v2 = val.clone();
             super::qsort(&mut val);
@@ -227,7 +242,7 @@ mod tests {
     #[test]
     pub fn msort() {
         for _ in 0..TIMES_PER_TEST {
-            let mut val = random_vec(30, -99, 100);
+            let mut val = random_vec(VEC_SIZE, -99, 100);
             println!("prior:\t{:?}", &val);
             let mut v2 = val.clone();
             super::msort(&mut val);
@@ -240,7 +255,7 @@ mod tests {
     #[test]
     pub fn msort_strings() {
         for _ in 0..TIMES_PER_TEST {
-            let mut val = random_strings(100);
+            let mut val = random_strings(VEC_SIZE);
             let mut v2 = val.clone();
             println!("prior:\t{:?}", &val);
             super::msort(&mut val);
@@ -253,7 +268,7 @@ mod tests {
     #[test]
     pub fn inssort() {
         for _ in 0..TIMES_PER_TEST {
-            let mut val = random_vec(30, -99, 100);
+            let mut val = random_vec(VEC_SIZE, -99, 100);
             println!("prior:\t{:?}", &val);
             let mut v2 = val.clone();
             super::inssort(&mut val);
