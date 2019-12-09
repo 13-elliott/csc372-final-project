@@ -10,6 +10,10 @@ edition = "2018"
 name = "rotn"
 path = "src/rot_n.rs"
 
+[[bin]]
+name = "avaca-doh"
+path = "src/avaca-doh.rs"
+
 # TODO
 #[[bin]]
 #name = "sieve"

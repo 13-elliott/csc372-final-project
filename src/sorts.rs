@@ -91,7 +91,9 @@ mod mergesort {
     pub fn sort<T: Ord + Send>(list: &mut [T]) {
         let mut intermediate = unsafe { slice_to_vec(list) };
         intermediate = sort_vec(intermediate);
-        unsafe { vec_to_slice(intermediate, list) }
+        unsafe {
+            vec_to_slice(intermediate, list);
+        }
     }
 
     pub fn sort_vec<T: Ord + Send>(mut list: Vec<T>) -> Vec<T> {
@@ -168,15 +170,15 @@ mod insertionsort {
         }
         i
     }
-    
+
     /// TODO: check over
     fn shift_left<T>(slice: &mut [T], from: usize, to: usize) {
         assert!(from >= to);
         let start = slice.as_mut_ptr();
         unsafe {
             let tmp = ptr::read(start.add(from));
-            for i in (to+1..=from).rev() {
-                let val = ptr::read(start.add(i-1));
+            for i in (to + 1..=from).rev() {
+                let val = ptr::read(start.add(i - 1));
                 ptr::write(start.add(i), val);
             }
             // reinsert tmp
@@ -247,8 +249,6 @@ mod tests {
             assert_eq!(val, v2);
         }
     }
-    
-    
 
     #[test]
     pub fn inssort() {

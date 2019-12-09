@@ -40,7 +40,6 @@ fn main() {
 /// Retrieves and parses the command line arguments, returning the number to rotate by
 /// and the input filename respectively
 fn parse_args() -> (isize, String) {
-
     //First three arugments from command line
     let mut args: Vec<_> = std::env::args().take(3).collect();
     if args.len() < 3 {
