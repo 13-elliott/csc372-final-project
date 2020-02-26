@@ -115,8 +115,7 @@ fn load_file(file: &File) -> HashMap<String, Averager> {
             line.clear();
         } else {
             // reached EOF
-            break;
+            return map;
         }
     }
-    map
 }

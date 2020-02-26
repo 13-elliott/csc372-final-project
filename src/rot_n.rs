@@ -83,7 +83,7 @@ fn rotate_file(input: &File, output: &File, by_n: isize) {
 /// Rotates all of the character in the given String
 fn rot_str(s: &mut String, by_n: isize) {
     debug_assert!(by_n.abs() < RANGE);
-    let mut dest = String::with_capacity(s.len());
+    let mut dest = String::with_capacity(s.capacity());
     for c in s.chars() {
         dest.push(rot_char(c, by_n));
     }
